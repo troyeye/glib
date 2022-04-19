@@ -1,4 +1,4 @@
-module glib
+module github.com/troyeye/glib
 
 go 1.17
 
