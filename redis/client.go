@@ -4,30 +4,43 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/troyeye/glib/utils/cast"
 	"strings"
+	"sync"
 )
 
 type Client struct {
 	c *redis.Client
 }
 
-var clients = map[string]*Client{}
+
+var (
+	clients = map[string]*Client{}
+	mutex = sync.RWMutex{}
+)
 
 func getClient(url string) (*redis.Client, error) {
-	if cli, ok := clients[url]; ok {
-		return cli.c, nil
-	} else {
-		if err := newClient(url); err != nil {
-			return nil, err
-		}
-		cli, _ = clients[url]
+	mutex.RLock()
+	cli, ok := clients[url]
+	mutex.RUnlock()
+	if ok {
 		return cli.c, nil
 	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	cli, ok = clients[url]
+	if ok {
+		return cli.c, nil
+	}
+
+	cli, err := newClient(url)
+	if err != nil {
+		return nil, err
+	}
+	clients[url] = cli
+	return cli.c, nil
 }
 
-func newClient(url string) error {
-	if clients[url] != nil {
-		return nil
-	}
+func newClient(url string) (*Client, error) {
 	password, host, db := parseURL(url)
 	redisOption := &redis.Options{
 		Addr:     host,
@@ -37,11 +50,10 @@ func newClient(url string) error {
 	client := redis.NewClient(redisOption)
 	err := client.Ping().Err()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	clients[url] = &Client{c: client}
-	return nil
+	return &Client{c: nil}, nil
 }
 
 func parseURL(url string) (string, string, int) {
