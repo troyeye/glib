@@ -29,6 +29,14 @@ func Set(url string, key string, value interface{}, expiration time.Duration) (*
 	return cli.Set(key, value, expiration), nil
 }
 
+func MGet(url string, key ...string) (*redis.SliceCmd, error)  {
+	cli, err := getClient(url)
+	if err != nil {
+		return nil, err
+	}
+	return cli.MGet(key...), nil
+}
+
 // ------------------------------------------------------
 
 func HDel(url string, key string, fields ...string) (*redis.IntCmd, error) {
