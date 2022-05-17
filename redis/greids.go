@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+func Expire(url, key string, expiration time.Duration) (*redis.BoolCmd, error) {
+	cli, err := getClient(url)
+	if err != nil {
+		return nil, err
+	}
+	return cli.Expire(key, expiration), nil
+}
+
 func Get(url string, key string) (*redis.StringCmd, error) {
 	cli, err := getClient(url)
 	if err != nil {
