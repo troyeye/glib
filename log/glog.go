@@ -16,6 +16,7 @@ import (
 )
 
 func init() {
+	logPath = "."
 	initStderr()
 	ResetToProduction()
 }
@@ -42,12 +43,12 @@ const (
 	File
 )
 
-func ResetToProduction() {
-	Reset(InfoLevel, Json, File, fileName)
+func ResetToProduction(logPaths ...string) {
+	Reset(InfoLevel, Json, File, fileName, logPaths...)
 }
 
-func ResetToDevelopment() {
-	Reset(DebugLevel, Human, Console, fileName)
+func ResetToDevelopment(logPaths ...string) {
+	Reset(DebugLevel, Human, Console, fileName, logPaths...)
 }
 
 func ResetLevel(logLevel Level) {
@@ -63,7 +64,11 @@ func ResetFileName(logFileName string) {
 	Reset(level, format, receiver, logFileName)
 }
 
-func Reset(logLevel Level, logFormat Format, logReceiver Receiver, logFileName string) error {
+func Reset(logLevel Level, logFormat Format, logReceiver Receiver, logFileName string, logPaths ...string) error {
+	if len(logPaths) != 0 {
+		logPath = logPaths[0]
+	}
+	initStderr()
 	if logFileName == "" {
 		exeName := strings.Split(os.Args[0], "/")
 		logFileName = exeName[len(exeName)-1]
@@ -236,7 +241,6 @@ func createEncoder(format Format) (zapcore.Encoder, error) {
 	}
 	return encoder, nil
 }
-
 func createWriteSyncer(encoder zapcore.Encoder, receiver Receiver, fileName string, logLevel Level) (zapcore.Core, error) {
 	var zapLevel zapcore.Level
 	switch logLevel {
@@ -268,7 +272,7 @@ func createWriteSyncer(encoder zapcore.Encoder, receiver Receiver, fileName stri
 		})
 
 		// 获取 info、warn日志文件的io.Writer 抽象 getWriter() 在下方实现
-		infoWriter := getWriter("./log/" + fileName + ".log.json")
+		infoWriter := getWriter(fmt.Sprintf("%s/log/", logPath) + fileName + ".log.json")
 		warnWriter := stdErrFileHandler
 
 		// 最后创建具体的Logger
@@ -283,7 +287,7 @@ func createWriteSyncer(encoder zapcore.Encoder, receiver Receiver, fileName stri
 }
 
 func initStderr() {
-	if err := os.MkdirAll("./log", os.ModePerm); err != nil {
+	if err := os.MkdirAll(fmt.Sprintf("%s/log/", logPath), os.ModePerm); err != nil {
 		panic(err)
 	}
 
@@ -294,7 +298,7 @@ func initStderr() {
 	exeName := strings.Split(os.Args[0], "/")
 	fileName := exeName[len(exeName)-1]
 
-	stdErrFile := "./log/" + fileName + ".error.json"
+	stdErrFile := fmt.Sprintf("%s/log/", logPath) + fileName + ".error.json"
 	if runtime.GOOS == "windows" {
 		return
 	}
@@ -334,3 +338,4 @@ var level Level
 var format Format
 var receiver Receiver
 var fileName string
+var logPath string
