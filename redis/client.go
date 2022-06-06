@@ -53,7 +53,7 @@ func newClient(url string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{c: nil}, nil
+	return &Client{c: client}, nil
 }
 
 func parseURL(url string) (string, string, int) {
