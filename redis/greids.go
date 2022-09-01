@@ -148,5 +148,5 @@ func LPush(url string, key string, values ...interface{}) (*redis.IntCmd, error)
 	if err != nil {
 		return nil, err
 	}
-	return cli.LPush(key, values), nil
+	return cli.LPush(key, values...), nil
 }
