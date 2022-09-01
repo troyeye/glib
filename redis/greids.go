@@ -142,3 +142,11 @@ func HVals(url string, key string) (*redis.StringSliceCmd, error) {
 	}
 	return cli.HVals(key), nil
 }
+
+func LPush(url string, key string, values ...interface{}) (*redis.IntCmd, error) {
+	cli, err := getClient(url)
+	if err != nil {
+		return nil, err
+	}
+	return cli.LPush(key, values), nil
+}
